@@ -440,6 +440,8 @@ export class Listener extends EventEmitter<ListenerEvents> {
             uuid: this.ctx.uid,
             zpwServiceMap: this.ctx.zpwServiceMap
         }
+
+        return data
     }
 }
 

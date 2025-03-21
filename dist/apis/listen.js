@@ -329,6 +329,7 @@ export class Listener extends EventEmitter {
             uuid: this.ctx.uid,
             zpwServiceMap: this.ctx.zpwServiceMap
         };
+        return data;
     }
 }
 function getHeader(buffer) {

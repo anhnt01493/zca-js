@@ -65,6 +65,10 @@ export declare class Listener extends EventEmitter<ListenerEvents> {
      * @param lastMsgId
      */
     requestOldMessages(threadType: ThreadType, lastMsgId?: string | null): void;
-    getConnectionInfo(): void;
+    getConnectionInfo(): {
+        secretKey: string;
+        uuid: string;
+        zpwServiceMap: Record<string, string[]>;
+    };
 }
 export {};

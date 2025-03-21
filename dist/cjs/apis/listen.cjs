@@ -331,11 +331,12 @@ class Listener extends EventEmitter {
         this.sendWs(payload);
     }
     getConnectionInfo() {
-        ({
+        let data = {
             secretKey: this.ctx.secretKey,
             uuid: this.ctx.uid,
             zpwServiceMap: this.ctx.zpwServiceMap
-        });
+        };
+        return data;
     }
 }
 function getHeader(buffer) {
