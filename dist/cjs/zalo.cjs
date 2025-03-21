@@ -101,6 +101,7 @@ class Zalo {
             throw new Error("Đăng nhập thất bại");
         ctx.secretKey = loginData.data.zpw_enk;
         ctx.uid = loginData.data.uid;
+        ctx.zpwServiceMap = loginData.data.zpw_service_map_v3;
         // Zalo currently responds with setttings instead of settings
         // they might fix this in the future, so we should have a fallback just in case
         ctx.settings = serverInfo.setttings || serverInfo.settings;
@@ -111,6 +112,26 @@ class Zalo {
         return new API(ctx, loginData.data.zpw_service_map_v3, utils.makeURL(ctx, loginData.data.zpw_ws[0], {
             t: Date.now(),
         }));
+    }
+    async loginPublisherWithCookie(ctx, credentials, secretKey, uuid, zpwService) {
+        await update.checkUpdate(ctx);
+        this.validateParams(credentials);
+        ctx.imei = credentials.imei;
+        ctx.cookie = this.parseCookies(credentials.cookie);
+        ctx.userAgent = credentials.userAgent;
+        ctx.language = credentials.language || "vi";
+        const serverInfo = await login.getServerInfo(ctx, this.enableEncryptParam);
+        if (!serverInfo)
+            throw new Error("Đăng nhập thất bại");
+        ctx.secretKey = secretKey;
+        ctx.uid = uuid;
+        // Zalo currently responds with setttings instead of settings
+        // they might fix this in the future, so we should have a fallback just in case
+        ctx.settings = serverInfo.setttings || serverInfo.settings;
+        ctx.extraVer = serverInfo.extra_ver;
+        if (!context.isContextSession(ctx))
+            throw new Error("Khởi tạo ngữ cảnh thát bại.");
+        return new API(ctx, zpwService, "");
     }
     async loginQR(options, callback) {
         if (!options)
@@ -148,7 +169,9 @@ class Zalo {
 class API {
     constructor(ctx, zpwServiceMap, wsUrl) {
         this.zpwServiceMap = zpwServiceMap;
-        this.listener = new listen.Listener(ctx, wsUrl);
+        if (wsUrl) {
+            this.listener = new listen.Listener(ctx, wsUrl);
+        }
         this.acceptFriendRequest = acceptFriendRequest.acceptFriendRequestFactory(ctx, this);
         this.addGroupDeputy = addGroupDeputy.addGroupDeputyFactory(ctx, this);
         this.addReaction = addReaction.addReactionFactory(ctx, this);

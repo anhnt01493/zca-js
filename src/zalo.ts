@@ -133,6 +133,7 @@ export class Zalo {
         if (!loginData || !serverInfo) throw new Error("Đăng nhập thất bại");
         ctx.secretKey = loginData.data.zpw_enk;
         ctx.uid = loginData.data.uid;
+        ctx.zpwServiceMap = loginData.data.zpw_service_map_v3
 
         // Zalo currently responds with setttings instead of settings
         // they might fix this in the future, so we should have a fallback just in case
@@ -150,6 +151,37 @@ export class Zalo {
             makeURL(ctx, loginData.data.zpw_ws[0], {
                 t: Date.now(),
             }),
+        );
+    }
+
+    private async loginPublisherWithCookie(ctx: ContextBase, credentials: Credentials, secretKey: string, uuid: string, zpwService: Record<string, string[]>) {
+        await checkUpdate(ctx);
+
+        this.validateParams(credentials);
+
+        ctx.imei = credentials.imei;
+        ctx.cookie = this.parseCookies(credentials.cookie);
+        ctx.userAgent = credentials.userAgent;
+        ctx.language = credentials.language || "vi";
+
+        const serverInfo = await getServerInfo(ctx, this.enableEncryptParam);
+
+        if (!serverInfo) throw new Error("Đăng nhập thất bại");
+        ctx.secretKey = secretKey;
+        ctx.uid = uuid;
+
+        // Zalo currently responds with setttings instead of settings
+        // they might fix this in the future, so we should have a fallback just in case
+        ctx.settings = serverInfo.setttings || serverInfo.settings;
+
+        ctx.extraVer = serverInfo.extra_ver;
+
+        if (!isContextSession(ctx)) throw new Error("Khởi tạo ngữ cảnh thát bại.");
+
+        return new API(
+            ctx,
+            zpwService,
+            ""
         );
     }
 
@@ -198,7 +230,7 @@ export class Zalo {
 
 export class API {
     public zpwServiceMap: Record<string, string[]>;
-    public listener: Listener;
+    public listener: Listener | undefined;
 
     public acceptFriendRequest: ReturnType<typeof acceptFriendRequestFactory>;
     public addGroupDeputy: ReturnType<typeof addGroupDeputyFactory>;
@@ -251,7 +283,9 @@ export class API {
 
     constructor(ctx: ContextSession, zpwServiceMap: Record<string, string[]>, wsUrl: string) {
         this.zpwServiceMap = zpwServiceMap;
-        this.listener = new Listener(ctx, wsUrl);
+        if (wsUrl) {
+            this.listener = new Listener(ctx, wsUrl);
+        }
 
         this.acceptFriendRequest = acceptFriendRequestFactory(ctx, this);
         this.addGroupDeputy = addGroupDeputyFactory(ctx, this);

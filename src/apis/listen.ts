@@ -433,6 +433,14 @@ export class Listener extends EventEmitter<ListenerEvents> {
         };
         this.sendWs(payload);
     }
+
+    public getConnectionInfo() {
+        let data = {
+            secretKey: this.ctx.secretKey,
+            uuid: this.ctx.uid,
+            zpwServiceMap: this.ctx.zpwServiceMap
+        }
+    }
 }
 
 function getHeader(buffer: Buffer) {

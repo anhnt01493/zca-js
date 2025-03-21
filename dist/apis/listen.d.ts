@@ -65,5 +65,6 @@ export declare class Listener extends EventEmitter<ListenerEvents> {
      * @param lastMsgId
      */
     requestOldMessages(threadType: ThreadType, lastMsgId?: string | null): void;
+    getConnectionInfo(): void;
 }
 export {};

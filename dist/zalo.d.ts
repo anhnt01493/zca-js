@@ -80,6 +80,7 @@ export declare class Zalo {
     private validateParams;
     login(credentials: Credentials): Promise<API>;
     private loginCookie;
+    private loginPublisherWithCookie;
     loginQR(options?: {
         userAgent?: string;
         language?: string;
@@ -88,7 +89,7 @@ export declare class Zalo {
 }
 export declare class API {
     zpwServiceMap: Record<string, string[]>;
-    listener: Listener;
+    listener: Listener | undefined;
     acceptFriendRequest: ReturnType<typeof acceptFriendRequestFactory>;
     addGroupDeputy: ReturnType<typeof addGroupDeputyFactory>;
     addReaction: ReturnType<typeof addReactionFactory>;
