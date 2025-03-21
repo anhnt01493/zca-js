@@ -79,6 +79,7 @@ export declare class Zalo {
     private parseCookies;
     private validateParams;
     login(credentials: Credentials): Promise<API>;
+    loginPublisher(credentials: Credentials, connectionInfo: Record<string, any>): Promise<API>;
     private loginCookie;
     private loginPublisherWithCookie;
     loginQR(options?: {

@@ -88,6 +88,13 @@ class Zalo {
         Object.assign(ctx.options, this.options);
         return this.loginCookie(ctx, credentials);
     }
+    async loginPublisher(credentials, connectionInfo) {
+        const ctx = context.createContext(this.options.apiType, this.options.apiVersion);
+        Object.assign(ctx.options, this.options);
+        if (!connectionInfo)
+            throw new Error("Đăng nhập thất bại");
+        return this.loginPublisherWithCookie(ctx, credentials, connectionInfo.secretKey, connectionInfo.uuid, connectionInfo.zpwService);
+    }
     async loginCookie(ctx, credentials) {
         await update.checkUpdate(ctx);
         this.validateParams(credentials);

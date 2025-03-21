@@ -117,6 +117,15 @@ export class Zalo {
         return this.loginCookie(ctx, credentials);
     }
 
+    public async loginPublisher(credentials: Credentials, connectionInfo: Record<string, any>) {
+        const ctx = createContext(this.options.apiType, this.options.apiVersion);
+        Object.assign(ctx.options, this.options);
+
+        if (!connectionInfo) throw new Error("Đăng nhập thất bại");
+
+        return this.loginPublisherWithCookie(ctx, credentials, connectionInfo.secretKey, connectionInfo.uuid, connectionInfo.zpwService)
+    }
+
     private async loginCookie(ctx: ContextBase, credentials: Credentials) {
         await checkUpdate(ctx);
 
