@@ -71,7 +71,7 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
                 if (!outputPath) {
                     outputPath = "files";
                 }
-                let outputDir = rootPath + outputPath;
+                let outputDir = rootPath + "/" + outputPath;
                 if (!fs.existsSync(outputDir)) {
                     fs.mkdirSync(outputDir, { recursive: true });
                 }
