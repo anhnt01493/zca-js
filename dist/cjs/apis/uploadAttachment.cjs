@@ -98,7 +98,6 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
                 data.params.grid = threadId;
             else
                 data.params.toid = threadId;
-            console.log("ext", extFile);
             switch (extFile) {
                 case "jpg":
                 case "jpeg":
@@ -155,9 +154,7 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
                     data.params.chunkId = 1;
                     break;
             }
-            console.log(filePath);
             const fileBuffer = await fs.promises.readFile(filePath);
-            console.log(data);
             for (let i = 0; i < data.params.totalChunk; i++) {
                 const formData = new FormData();
                 const slicedBuffer = fileBuffer.subarray(i * chunkSize, (i + 1) * chunkSize);
@@ -169,7 +166,6 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
             }
             attachmentsData.push(data);
         }
-        console.log("attachmentsData", attachmentsData.length);
         const requests = [], results = [];
         for (const data of attachmentsData) {
             for (let i = 0; i < data.params.totalChunk; i++) {
@@ -186,15 +182,12 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
                     /**
                      * @todo better type rather than any
                      */
-                    console.log("12121231");
                     const resData = await utils.resolveResponse(ctx, response);
-                    console.log("resData", resData);
                     if (resData && resData.fileId != -1 && resData.photoId != -1)
                         await new Promise((resolve) => {
                             if (data.fileType == "video" || data.fileType == "others") {
                                 const uploadCallback = async (wsData) => {
                                     let result = Object.assign(Object.assign(Object.assign({ fileType: data.fileType }, resData), wsData), { totalSize: data.fileData.totalSize, fileName: data.fileData.fileName, checksum: (await utils.getMd5LargeFileObject(data.filePath, data.fileData.totalSize)).data });
-                                    console.log("uploadCallback", result);
                                     results.push(result);
                                     resolve();
                                 };
@@ -211,7 +204,14 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
             }
         }
         await Promise.all(requests);
-        console.log(downloadData);
+        for (const path in downloadData) {
+            console.log(path);
+            fs.unlink(path, (err) => {
+                if (err) {
+                    console.error('Error deleting the file:', err);
+                }
+            });
+        }
         return results;
     };
 });
