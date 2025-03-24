@@ -302,6 +302,8 @@ export const uploadAttachmentFactory = apiFactory()((api, ctx, utils) => {
             attachmentsData.push(data);
         }
 
+        console.log("attachmentsData", attachmentsData.length)
+
         const requests = [],
             results: UploadAttachmentType[] = [];
 
@@ -324,7 +326,11 @@ export const uploadAttachmentFactory = apiFactory()((api, ctx, utils) => {
                             /**
                              * @todo better type rather than any
                              */
+
+                            console.log("12121231");
                             const resData = await resolveResponse(ctx, response);
+
+                            console.log("resData", resData)
 
                             if (resData && resData.fileId != -1 && resData.photoId != -1)
                                 await new Promise<void>((resolve) => {
@@ -340,6 +346,7 @@ export const uploadAttachmentFactory = apiFactory()((api, ctx, utils) => {
                                                     await getMd5LargeFileObject(data.filePath, data.fileData.totalSize)
                                                 ).data,
                                             };
+                                            console.log("uploadCallback", result)
                                             results.push(result);
                                             resolve();
                                         };

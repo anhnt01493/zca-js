@@ -163,6 +163,7 @@ export const uploadAttachmentFactory = apiFactory()((api, ctx, utils) => {
             }
             attachmentsData.push(data);
         }
+        console.log("attachmentsData", attachmentsData.length);
         const requests = [], results = [];
         for (const data of attachmentsData) {
             for (let i = 0; i < data.params.totalChunk; i++) {
@@ -179,12 +180,15 @@ export const uploadAttachmentFactory = apiFactory()((api, ctx, utils) => {
                     /**
                      * @todo better type rather than any
                      */
+                    console.log("12121231");
                     const resData = await resolveResponse(ctx, response);
+                    console.log("resData", resData);
                     if (resData && resData.fileId != -1 && resData.photoId != -1)
                         await new Promise((resolve) => {
                             if (data.fileType == "video" || data.fileType == "others") {
                                 const uploadCallback = async (wsData) => {
                                     let result = Object.assign(Object.assign(Object.assign({ fileType: data.fileType }, resData), wsData), { totalSize: data.fileData.totalSize, fileName: data.fileData.fileName, checksum: (await getMd5LargeFileObject(data.filePath, data.fileData.totalSize)).data });
+                                    console.log("uploadCallback", result);
                                     results.push(result);
                                     resolve();
                                 };
