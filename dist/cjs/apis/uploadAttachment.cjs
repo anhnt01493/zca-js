@@ -71,12 +71,12 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
                 if (!outputPath) {
                     outputPath = "files";
                 }
-                if (!fs.existsSync(outputPath)) {
-                    fs.mkdirSync(outputPath, { recursive: true });
+                let outputDir = rootPath + outputPath;
+                if (!fs.existsSync(outputDir)) {
+                    fs.mkdirSync(outputDir, { recursive: true });
                 }
-                utils.getFileExtension(filePath);
                 const fileName = utils.getFileName(filePath);
-                const newPath = path.join(__dirname, outputPath, fileName);
+                const newPath = outputDir + "/" + fileName;
                 console.log("after download: ", newPath);
                 await downloadFile(filePath, newPath);
                 filePath = newPath;
