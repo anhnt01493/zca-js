@@ -178,11 +178,11 @@ export const uploadAttachmentFactory = apiFactory()((api, ctx, utils) => {
             console.log(filePath)
             if (filePath.startsWith("http")) {
                 let rootPath = path.resolve(".");
-                rootPath = rootPath.split('node_modules')[0].slice(0, -1);
+                rootPath = rootPath.split('node_modules')[0];
                 if (!outputPath) {
                     outputPath = "files"
                 }
-                let outputDir = rootPath + "/" + outputPath
+                let outputDir = rootPath + outputPath
                 if (!fs.existsSync(outputDir)) {
                     fs.mkdirSync(outputDir, { recursive: true });
                 }
