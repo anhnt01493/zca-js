@@ -47,5 +47,5 @@ export type FileData = {
 };
 export type UploadAttachmentType = ImageResponse | VideoResponse | FileResponse;
 export type UploadAttachmentResponse = UploadAttachmentType[];
-export declare const uploadAttachmentFactory: (ctx: import("../context.js").ContextBase, api: import("../zalo.js").API) => (filePaths: string[], threadId: string, type?: ThreadType) => Promise<UploadAttachmentType[]>;
+export declare const uploadAttachmentFactory: (ctx: import("../context.js").ContextBase, api: import("../zalo.js").API) => (filePaths: string[], threadId: string, type: ThreadType | undefined, outputPath: string | undefined) => Promise<UploadAttachmentType[]>;
 export {};

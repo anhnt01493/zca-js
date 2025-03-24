@@ -245,7 +245,7 @@ const sendMessageFactory = utils.apiFactory()((api, ctx, utils$1) => {
         const canBeDesc = isSingleFile && ["jpg", "jpeg", "png", "webp"].includes(firstExtFile);
         const gifFiles = attachments.filter((e) => utils.getFileExtension(e) == "gif");
         attachments = attachments.filter((e) => utils.getFileExtension(e) != "gif");
-        const uploadAttachment = attachments.length == 0 ? [] : await api.uploadAttachment(attachments, threadId, type);
+        const uploadAttachment = attachments.length == 0 ? [] : await api.uploadAttachment(attachments, threadId, type, undefined);
         const attachmentsData = [];
         let indexInGroupLayout = uploadAttachment.length - 1;
         const groupLayoutId = getGroupLayoutId();

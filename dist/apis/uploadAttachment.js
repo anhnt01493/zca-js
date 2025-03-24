@@ -1,8 +1,10 @@
 import FormData from "form-data";
 import fs from "node:fs";
+import axios from "axios";
 import { ZaloApiError } from "../Errors/ZaloApiError.js";
 import { ThreadType } from "../models/index.js";
 import { apiFactory, getFileExtension, getFileName, getFileSize, getImageMetaData, getMd5LargeFileObject, resolveResponse, } from "../utils.js";
+import path from "node:path";
 const urlType = {
     image: "photo_original/upload",
     video: "asyncfile/upload",
@@ -20,6 +22,19 @@ export const uploadAttachmentFactory = apiFactory()((api, ctx, utils) => {
     function isExtensionValid(ext) {
         return sharefile.restricted_ext_file.indexOf(ext) == -1;
     }
+    async function downloadFile(url, outputPath) {
+        const response = await axios({
+            method: 'GET',
+            url: url,
+            responseType: 'stream',
+        });
+        const writer = fs.createWriteStream(outputPath);
+        response.data.pipe(writer);
+        return new Promise((resolve, reject) => {
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
+    }
     /**
      * Upload an attachment to a thread
      *
@@ -29,7 +44,7 @@ export const uploadAttachmentFactory = apiFactory()((api, ctx, utils) => {
      *
      * @throws ZaloApiError
      */
-    return async function uploadAttachment(filePaths, threadId, type = ThreadType.User) {
+    return async function uploadAttachment(filePaths, threadId, type = ThreadType.User, outputPath) {
         if (!filePaths || filePaths.length == 0)
             throw new ZaloApiError("Missing filePaths");
         if (isExceedMaxFile(filePaths.length))
@@ -42,9 +57,28 @@ export const uploadAttachmentFactory = apiFactory()((api, ctx, utils) => {
         let url = `${serviceURL}/${isGroupMessage ? "group" : "message"}/`;
         const typeParam = isGroupMessage ? "11" : "2";
         let clientId = Date.now();
-        for (const filePath of filePaths) {
-            if (!fs.existsSync(filePath))
-                throw new ZaloApiError("File not found");
+        for (let filePath of filePaths) {
+            console.log(filePath);
+            if (filePath.startsWith("http")) {
+                if (!outputPath) {
+                    outputPath = "files";
+                }
+                let outputDir = path.resolve(outputPath);
+                if (!fs.existsSync(outputPath)) {
+                    fs.mkdirSync(outputPath, { recursive: true });
+                }
+                const extFile = getFileExtension(filePath);
+                const fileName = getFileName(filePath);
+                const newPath = path.join(__dirname, outputPath, `${fileName}.${extFile}`);
+                console.log("after download: ", newPath);
+                await downloadFile(filePath, newPath);
+                filePath = newPath;
+                console.log("finish download");
+            }
+            else {
+                if (!fs.existsSync(filePath))
+                    throw new ZaloApiError("File not found");
+            }
             const extFile = getFileExtension(filePath);
             const fileName = getFileName(filePath);
             if (isExtensionValid(extFile) == false)
@@ -164,6 +198,7 @@ export const uploadAttachmentFactory = apiFactory()((api, ctx, utils) => {
             }
         }
         await Promise.all(requests);
+        console.log(filePaths);
         return results;
     };
 });

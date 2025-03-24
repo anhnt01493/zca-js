@@ -38,6 +38,7 @@
     "author": "RFS-ADRENO, truong9c2208",
     "license": "MIT",
     "dependencies": {
+        "axios": "^1.8.4",
         "crypto-js": "^4.2.0",
         "form-data": "^4.0.0",
         "pako": "^2.1.0",
