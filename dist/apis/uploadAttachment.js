@@ -198,7 +198,8 @@ export const uploadAttachmentFactory = apiFactory()((api, ctx, utils) => {
             }
         }
         await Promise.all(requests);
-        for (const path in downloadData) {
+        console.log(downloadData);
+        downloadData.forEach((path) => {
             console.log(path);
             fs.unlink(path, (err) => {
                 if (err) {
@@ -207,7 +208,7 @@ export const uploadAttachmentFactory = apiFactory()((api, ctx, utils) => {
                 else {
                 }
             });
-        }
+        });
         return results;
     };
 });
