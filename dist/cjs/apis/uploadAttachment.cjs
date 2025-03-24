@@ -60,29 +60,26 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
         const chunkSize = ctx.settings.features.sharefile.chunk_size_file;
         const isGroupMessage = type == Enum.ThreadType.Group;
         let attachmentsData = [];
+        let downloadData = [];
         let url = `${serviceURL}/${isGroupMessage ? "group" : "message"}/`;
         const typeParam = isGroupMessage ? "11" : "2";
         let clientId = Date.now();
         for (let filePath of filePaths) {
-            console.log(filePath);
             if (filePath.startsWith("http")) {
                 let rootPath = path.resolve(".");
                 rootPath = rootPath.split('node_modules')[0];
-                console.log(rootPath);
                 if (!outputPath) {
                     outputPath = "files";
                 }
                 let outputDir = rootPath + "/" + outputPath;
-                console.log(outputDir);
                 if (!fs.existsSync(outputDir)) {
                     fs.mkdirSync(outputDir, { recursive: true });
                 }
                 const fileName = utils.getFileName(filePath);
                 const newPath = outputDir + "/" + fileName;
-                console.log("after download: ", newPath);
                 await downloadFile(filePath, newPath);
                 filePath = newPath;
-                console.log("finish download");
+                downloadData.push(newPath);
             }
             else {
                 if (!fs.existsSync(filePath))
@@ -101,6 +98,7 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
                 data.params.grid = threadId;
             else
                 data.params.toid = threadId;
+            console.log("ext", extFile);
             switch (extFile) {
                 case "jpg":
                 case "jpeg":
@@ -157,7 +155,9 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
                     data.params.chunkId = 1;
                     break;
             }
+            console.log(filePath);
             const fileBuffer = await fs.promises.readFile(filePath);
+            console.log(data);
             for (let i = 0; i < data.params.totalChunk; i++) {
                 const formData = new FormData();
                 const slicedBuffer = fileBuffer.subarray(i * chunkSize, (i + 1) * chunkSize);
@@ -207,7 +207,7 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
             }
         }
         await Promise.all(requests);
-        console.log(filePaths);
+        console.log(downloadData);
         return results;
     };
 });
