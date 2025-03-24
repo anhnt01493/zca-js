@@ -76,7 +76,7 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
                     fs.mkdirSync(outputDir, { recursive: true });
                 }
                 const fileName = utils.getFileName(filePath);
-                const newPath = outputDir + "/" + fileName;
+                const newPath = outputDir + "/" + `${Date.now()}_${fileName}`;
                 await downloadFile(filePath, newPath);
                 filePath = newPath;
                 downloadData.push(newPath);
@@ -204,9 +204,7 @@ const uploadAttachmentFactory = utils.apiFactory()((api, ctx, utils$1) => {
             }
         }
         await Promise.all(requests);
-        console.log(downloadData);
         downloadData.forEach((path) => {
-            console.log(path);
             fs.unlink(path, (err) => {
                 if (err) {
                     console.error('Error deleting the file:', err);
