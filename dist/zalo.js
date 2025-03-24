@@ -92,6 +92,12 @@ export class Zalo {
             throw new Error("Đăng nhập thất bại");
         return this.loginPublisherWithCookie(ctx, credentials, connectionInfo.secretKey, connectionInfo.uuid, connectionInfo.zpwService);
     }
+    async loginAndGetAccountInfo(credentials) {
+        const ctx = createContext(this.options.apiType, this.options.apiVersion);
+        Object.assign(ctx.options, this.options);
+        let api = await this.loginCookie(ctx, credentials);
+        return await api.fetchAccountInfo();
+    }
     async loginCookie(ctx, credentials) {
         await checkUpdate(ctx);
         this.validateParams(credentials);

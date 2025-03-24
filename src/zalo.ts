@@ -126,6 +126,14 @@ export class Zalo {
         return this.loginPublisherWithCookie(ctx, credentials, connectionInfo.secretKey, connectionInfo.uuid, connectionInfo.zpwService)
     }
 
+    public async loginAndGetAccountInfo(credentials: Credentials) {
+        const ctx = createContext(this.options.apiType, this.options.apiVersion);
+        Object.assign(ctx.options, this.options);
+
+        let api = await this.loginCookie(ctx, credentials);
+        return await api.fetchAccountInfo()
+    }
+
     private async loginCookie(ctx: ContextBase, credentials: Credentials) {
         await checkUpdate(ctx);
 

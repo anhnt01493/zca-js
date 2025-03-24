@@ -80,6 +80,7 @@ export declare class Zalo {
     private validateParams;
     login(credentials: Credentials): Promise<API>;
     loginPublisher(credentials: Credentials, connectionInfo: Record<string, any>): Promise<API>;
+    loginAndGetAccountInfo(credentials: Credentials): Promise<import("./apis/fetchAccountInfo.js").FetchAccountInfoResponse>;
     private loginCookie;
     private loginPublisherWithCookie;
     loginQR(options?: {
