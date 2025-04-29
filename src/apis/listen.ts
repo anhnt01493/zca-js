@@ -13,7 +13,7 @@ import {
     Typing,
     UserTyping,
 } from "../models/index.js";
-import { decodeEventData, getFriendEventType, getGroupEventType, logger } from "../utils.js";
+import { decodeEventData, getFriendEventType, getGroupEventType, logger, makeURL } from "../utils.js";
 import { ZaloApiError } from "../Errors/ZaloApiError.js";
 import type { ContextSession } from "../context.js";
 import { type SeenMessage, GroupSeenMessage, UserSeenMessage } from "../models/SeenMessage.js";
@@ -36,7 +36,7 @@ export type OnMessageCallback = (message: Message) => any;
 export enum CloseReason {
     ManualClosure = 1000,
     DuplicateConnection = 3000,
-    KickConnection = 3003
+    KickConnection = 3003,
 }
 
 interface ListenerEvents {
@@ -49,6 +49,7 @@ interface ListenerEvents {
     seen_messages: [messages: SeenMessage[]];
     delivered_messages: [messages: DeliveredMessage[]];
     reaction: [reaction: Reaction];
+    old_reactions: [reactions: Reaction[]];
     upload_attachment: [data: UploadEventData];
     undo: [data: Undo];
     friend_event: [data: FriendEvent];
@@ -57,11 +58,20 @@ interface ListenerEvents {
 }
 
 export class Listener extends EventEmitter<ListenerEvents> {
-    private url: string;
+    private wsURL: string;
     private cookie: string;
     private userAgent: string;
 
     private ws: WebSocket | null;
+    private retryCount: Record<
+        string,
+        {
+            count: number;
+            max: number;
+            times: number[];
+        }
+    >;
+    private rotateCount: number;
 
     private onConnectedCallback: Function;
     private onClosedCallback: Function;
@@ -76,13 +86,27 @@ export class Listener extends EventEmitter<ListenerEvents> {
 
     constructor(
         private ctx: ContextSession,
-        url: string,
+        private urls: string[],
     ) {
         super();
         if (!ctx.cookie) throw new Error("Cookie is not available");
         if (!ctx.userAgent) throw new Error("User agent is not available");
 
-        this.url = url;
+        this.wsURL = makeURL(this.ctx, this.urls[0], {
+            t: Date.now(),
+        });
+        this.retryCount = {};
+        this.rotateCount = 0;
+
+        for (const retry in ctx.settings.features.socket.retries) {
+            const { times, max } = ctx.settings.features.socket.retries[retry];
+            this.retryCount[retry] = {
+                count: 0,
+                max: max || 0,
+                times: typeof times === "number" ? [times] : times,
+            };
+        }
+
         this.cookie = ctx.cookie.getCookieStringSync("https://chat.zalo.me");
         this.userAgent = ctx.userAgent;
 
@@ -96,31 +120,71 @@ export class Listener extends EventEmitter<ListenerEvents> {
         this.onMessageCallback = () => {};
     }
 
+    /**
+     * @deprecated Use `on` method instead
+     */
     public onConnected(cb: Function) {
         this.onConnectedCallback = cb;
     }
 
+    /**
+     * @deprecated Use `on` method instead
+     */
     public onClosed(cb: Function) {
         this.onClosedCallback = cb;
     }
 
+    /**
+     * @deprecated Use `on` method instead
+     */
     public onError(cb: Function) {
         this.onErrorCallback = cb;
     }
 
+    /**
+     * @deprecated Use `on` method instead
+     */
     public onMessage(cb: OnMessageCallback) {
         this.onMessageCallback = cb;
     }
 
-    public start() {
+    private canRetry(code: CloseReason) {
+        if (!this.ctx.settings.features.socket.close_and_retry_codes.includes(code)) return false;
+        if (this.retryCount[code.toString()].count >= this.retryCount[code.toString()].max) return false;
+        this.retryCount[code.toString()].count++;
+
+        const { count, max, times } = this.retryCount[code.toString()];
+        const retryTime = count - 1 < times.length ? times[count - 1] : times[times.length - 1];
+        logger(this.ctx).verbose(`Retry for code ${code} in ${retryTime}ms (${count}/${max})`);
+
+        return retryTime;
+    }
+
+    private shouldRotate(code: CloseReason) {
+        if (!this.ctx.settings.features.socket.rotate_error_codes.includes(code)) return false;
+        if (this.rotateCount >= this.urls.length - 1) return false;
+
+        return true;
+    }
+
+    private rotateEndpoint() {
+        this.rotateCount++;
+        this.wsURL = makeURL(this.ctx, this.urls[this.rotateCount], {
+            t: Date.now(),
+        });
+        logger(this.ctx).verbose(`Rotating endpoint to ${this.wsURL}`);
+    }
+
+    public start({ retryOnClose = false }: { retryOnClose?: boolean } = {}) {
         if (this.ws) throw new ZaloApiError("Already started");
-        const ws = new WebSocket(this.url, {
+
+        const ws = new WebSocket(this.wsURL, {
             headers: {
                 "accept-encoding": "gzip, deflate, br, zstd",
                 "accept-language": "en-US,en;q=0.9",
                 "cache-control": "no-cache",
                 connection: "Upgrade",
-                host: new URL(this.url).host,
+                host: new URL(this.wsURL).host,
                 origin: "https://chat.zalo.me",
                 prgama: "no-cache",
                 "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
@@ -138,8 +202,20 @@ export class Listener extends EventEmitter<ListenerEvents> {
         };
 
         ws.onclose = (event) => {
-            this.onClosedCallback(event.reason);
-            this.emit("closed", event.code as CloseReason);
+            this.reset();
+            const retry = retryOnClose && this.canRetry(event.code as CloseReason);
+            if (retry && retryOnClose) {
+                const shouldRotate = this.shouldRotate(event.code as CloseReason);
+                if (shouldRotate) {
+                    this.rotateEndpoint();
+                }
+                setTimeout(() => {
+                    this.start({ retryOnClose: true });
+                }, retry);
+            } else {
+                this.onClosedCallback(event.code);
+                this.emit("closed", event.code as CloseReason);
+            }
         };
 
         ws.onerror = (event) => {
@@ -177,12 +253,9 @@ export class Listener extends EventEmitter<ListenerEvents> {
                         this.sendWs(payload, false);
                     };
 
-                    this.pingInterval = setInterval(
-                        () => {
-                            ping();
-                        },
-                        3 * 60 * 1000,
-                    );
+                    this.pingInterval = setInterval(() => {
+                        ping();
+                    }, this.ctx.settings.features.socket.ping_interval);
                 }
 
                 if (version == 1 && cmd == 501 && subCmd == 0) {
@@ -277,7 +350,7 @@ export class Listener extends EventEmitter<ListenerEvents> {
 
                             const friendEvent = initializeFriendEvent(
                                 this.ctx.uid,
-                                friendEventData,
+                                typeof friendEventData == "number" ? control.content.data : friendEventData,
                                 getFriendEventType(control.content.act),
                             );
                             if (friendEvent.isSelf && !this.selfListen) continue;
@@ -307,11 +380,14 @@ export class Listener extends EventEmitter<ListenerEvents> {
                     }
                 }
 
-                if (version == 1 && cmd == 3000 && subCmd == 0) {
-                    console.log();
-                    logger(this.ctx).error("Another connection is opened, closing this one");
-                    console.log();
-                    if (ws.readyState !== WebSocket.CLOSED) ws.close(CloseReason.DuplicateConnection);
+                if (cmd == 610 || cmd == 611) {
+                    const parsedData = (await decodeEventData(parsed, this.cipherKey)).data;
+                    const isGroup = cmd == 611;
+
+                    const reacts = parsedData[isGroup ? "reactGroups" : "reacts"] as any[];
+                    const reactionObjects = reacts.map((react: any) => new Reaction(this.ctx.uid, react, isGroup));
+
+                    this.emit("old_reactions", reactionObjects);
                 }
 
                 if (cmd == 510 && subCmd == 1) {
@@ -385,6 +461,13 @@ export class Listener extends EventEmitter<ListenerEvents> {
                         this.emit("seen_messages", seenObjects);
                     }
                 }
+
+                if (version == 1 && cmd == 3000 && subCmd == 0) {
+                    console.log();
+                    logger(this.ctx).error("Another connection is opened, closing this one");
+                    console.log();
+                    if (ws.readyState !== WebSocket.CLOSED) ws.close(CloseReason.DuplicateConnection);
+                }
             } catch (error) {
                 this.onErrorCallback(error);
                 this.emit("error", error);
@@ -395,7 +478,7 @@ export class Listener extends EventEmitter<ListenerEvents> {
     public stop() {
         if (this.ws) {
             this.ws.close(CloseReason.ManualClosure);
-            this.ws = null;
+            this.reset();
         }
     }
 
@@ -434,7 +517,28 @@ export class Listener extends EventEmitter<ListenerEvents> {
         this.sendWs(payload);
     }
 
-    public getConnectionInfo() {
+    /**
+     * Request old messages
+     *
+     * @param lastMsgId
+     */
+    public requestOldReactions(threadType: ThreadType, lastMsgId: string | null = null) {
+        const payload = {
+            version: 1,
+            cmd: threadType === ThreadType.User ? 610 : 611,
+            subCmd: 1,
+            data: { first: true, lastId: lastMsgId, preIds: [] },
+        };
+        this.sendWs(payload);
+    }
+
+    private reset() {
+        this.ws = null;
+        this.cipherKey = undefined;
+        if (this.pingInterval) clearInterval(this.pingInterval);
+    }
+
+	public getConnectionInfo() {
         let data = {
             secretKey: this.ctx.secretKey,
             uuid: this.ctx.uid,
@@ -442,7 +546,7 @@ export class Listener extends EventEmitter<ListenerEvents> {
         }
 
         return data
-    }
+	}
 }
 
 function getHeader(buffer: Buffer) {

@@ -4,6 +4,20 @@ This is an unofficial Zalo API for personal account. It work by simulating the b
 
 **Warning**: Using this API could get your account locked or banned. We are not responsible for any issues that may happen. Use it at your own risk.
 
+## Table of Contents
+
+-   [Installation](#installation)
+-   [Documentation](#documentation)
+-   [Basic Usages](#basic-usages)
+    -   [Login](#login)
+    -   [Listen for new messages](#listen-for-new-messages)
+    -   [Send a message](#send-a-message)
+    -   [Get/Send a sticker](#getsend-a-sticker)
+-   [Example](#example)
+-   [Projects](#projects)
+-   [Contributing](#contributing)
+-   [License](#license)
+
 ## Installation
 
 ```bash
@@ -12,7 +26,7 @@ bun install zca-js # or npm install zca-js
 
 ## Documentation
 
-See [API Documentation](https://zca.tdung.co/) for more details.
+See [API Documentation](https://tdung.gitbook.io/zca-js) for more details.
 
 ## Basic Usages
 
@@ -116,6 +130,11 @@ api.getStickers("hello").then(async (stickerIds) => {
 ## Example
 
 See [examples](examples) folder for more details.
+
+## Projects
+
+-   [MultiZlogin](https://github.com/ChickenAI/multizlogin) - Hệ thống quản lý đa tài khoản Zalo, hỗ trợ đăng nhập và quản lý nhiều tài khoản Zalo cùng lúc, tích hợp proxy và webhook.
+-   [n8n-nodes-zalo-tools](https://github.com/ChickenAI/zalo-node) - N8N node cho Zalo cá nhân
 
 ## Contributing
 
