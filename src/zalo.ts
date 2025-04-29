@@ -313,8 +313,8 @@ export class API {
 
     constructor(ctx: ContextSession, zpwServiceMap: ZPWServiceMap, wsUrls: string[]) {
         this.zpwServiceMap = zpwServiceMap;
-        if (wsUrl) {
-            this.listener = new Listener(ctx, wsUrl);
+        if (wsUrls) {
+            this.listener = new Listener(ctx, wsUrls);
         }
 
         this.acceptFriendRequest = acceptFriendRequestFactory(ctx, this);
