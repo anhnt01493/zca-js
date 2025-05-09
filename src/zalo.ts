@@ -68,6 +68,7 @@ import { checkUpdate } from "./update.js";
 import { customFactory } from "./apis/custom.js";
 import { getLabelsFactory } from "./apis/getLabels.js";
 import { updateLabelsFactory } from "./apis/updateLabels.js";
+import { getRequestedFriendsFactory } from "./apis/getRequestedFriends.js";
 
 export type Cookie = {
     domain: string;
@@ -188,11 +189,13 @@ export class Zalo {
         ctx.userAgent = credentials.userAgent;
         ctx.language = credentials.language || "vi";
 
+        const loginData = await login(ctx, this.enableEncryptParam);
         const serverInfo = await getServerInfo(ctx, this.enableEncryptParam);
 
-        if (!serverInfo) throw new Error("Đăng nhập thất bại");
-        ctx.secretKey = secretKey;
-        ctx.uid = uuid;
+        if (!loginData || !serverInfo) throw new Error("Đăng nhập thất bại");
+        ctx.secretKey = loginData.data.zpw_enk;
+        ctx.uid = loginData.data.uid;
+        ctx.zpwServiceMap = loginData.data.zpw_service_map_v3
 
         // Zalo currently responds with setttings instead of settings
         // they might fix this in the future, so we should have a fallback just in case
@@ -202,11 +205,9 @@ export class Zalo {
 
         if (!isContextSession(ctx)) throw new Error("Khởi tạo ngữ cảnh thát bại.");
 
-        return new API(
-            ctx,
-            zpwService,
-            ""
-        );
+        logger(ctx).info("Logged in as", loginData.data.uid);
+
+        return new API(ctx, loginData.data.zpw_service_map_v3, loginData.data.zpw_ws);
     }
 
     public async loginQR(
@@ -277,6 +278,7 @@ export class API {
     public fetchAccountInfo: ReturnType<typeof fetchAccountInfoFactory>;
     public findUser: ReturnType<typeof findUserFactory>;
     public getAllFriends: ReturnType<typeof getAllFriendsFactory>;
+    public getRequestedFriends: ReturnType<typeof getRequestedFriendsFactory>;
     public getAllGroups: ReturnType<typeof getAllGroupsFactory>;
     public getCookie: ReturnType<typeof getCookieFactory>;
     public getGroupInfo: ReturnType<typeof getGroupInfoFactory>;
@@ -313,9 +315,7 @@ export class API {
 
     constructor(ctx: ContextSession, zpwServiceMap: ZPWServiceMap, wsUrls: string[]) {
         this.zpwServiceMap = zpwServiceMap;
-        if (wsUrls) {
-            this.listener = new Listener(ctx, wsUrls);
-        }
+        this.listener = new Listener(ctx, wsUrls);
 
         this.acceptFriendRequest = acceptFriendRequestFactory(ctx, this);
         this.addGroupDeputy = addGroupDeputyFactory(ctx, this);
@@ -338,6 +338,7 @@ export class API {
         this.fetchAccountInfo = fetchAccountInfoFactory(ctx, this);
         this.findUser = findUserFactory(ctx, this);
         this.getAllFriends = getAllFriendsFactory(ctx, this);
+        this.getRequestedFriends = getRequestedFriendsFactory(ctx, this)
         this.getAllGroups = getAllGroupsFactory(ctx, this);
         this.getCookie = getCookieFactory(ctx, this);
         this.getGroupInfo = getGroupInfoFactory(ctx, this);
