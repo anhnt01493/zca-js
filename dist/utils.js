@@ -357,7 +357,7 @@ export function getMd5LargeFileObject(filePath, fileSize) {
 export const logger = (ctx) => ({
     verbose: (...args) => {
         if (ctx.options.logging)
-            console.log("\x1b[2m🚀 VERBOSE\x1b[0m", ...args);
+            console.log("\x1b[35m🚀 VERBOSE\x1b[0m", ...args);
     },
     info: (...args) => {
         if (ctx.options.logging)
@@ -520,7 +520,7 @@ export function getFriendEventType(act) {
         return FriendEventType.PIN_CREATE;
     return FriendEventType.UNKNOWN;
 }
-export async function handleZaloResponse(ctx, response) {
+export async function handleZaloResponse(ctx, response, isEncrypted = true) {
     const result = {
         data: null,
         error: null,
@@ -540,7 +540,7 @@ export async function handleZaloResponse(ctx, response) {
             };
             return result;
         }
-        const decodedData = JSON.parse(decodeAES(ctx.secretKey, jsonData.data));
+        const decodedData = isEncrypted ? JSON.parse(decodeAES(ctx.secretKey, jsonData.data)) : jsonData;
         if (decodedData.error_code != 0) {
             result.error = {
                 message: decodedData.error_message,
@@ -558,8 +558,8 @@ export async function handleZaloResponse(ctx, response) {
     }
     return result;
 }
-export async function resolveResponse(ctx, res, cb) {
-    const result = await handleZaloResponse(ctx, res);
+export async function resolveResponse(ctx, res, cb, isEncrypted) {
+    const result = await handleZaloResponse(ctx, res, isEncrypted);
     if (result.error)
         throw new ZaloApiError(result.error.message, result.error.code);
     if (cb)
@@ -582,7 +582,7 @@ export function apiFactory() {
                     return request(ctx, url, options, raw);
                 },
                 logger: logger(ctx),
-                resolve: (res, cb) => resolveResponse(ctx, res, cb),
+                resolve: (res, cb, isEncrypted) => resolveResponse(ctx, res, cb, isEncrypted),
             };
             return callback(api, ctx, utils);
         };

@@ -1,7 +1,8 @@
 import { ZaloApiError } from "../Errors/ZaloApiError.js";
 import { apiFactory } from "../utils.js";
-export const getAllFriendsFactory = apiFactory()((api, ctx, utils) => {
-    const serviceURL = utils.makeURL(`${api.zpwServiceMap.profile[0]}/api/social/friend/getfriends`);
+export const getRequestedFriendsFactory = apiFactory()((api, ctx, utils) => {
+    console.log(`${api.zpwServiceMap.friend[0]}/api/friend/requested/list`);
+    const serviceURL = utils.makeURL(`${api.zpwServiceMap.friend[0]}/api/friend/requested/list`);
     /**
      * Get all friends
      *
@@ -10,13 +11,8 @@ export const getAllFriendsFactory = apiFactory()((api, ctx, utils) => {
      *
      * @throws ZaloApiError
      */
-    return async function getAllFriends(count = 20000, page = 1) {
+    return async function getRequestedFriends() {
         const params = {
-            incInvalid: 1,
-            page,
-            count,
-            avatar_size: 120,
-            actiontime: 0,
             imei: ctx.imei,
         };
         const encryptedParams = utils.encodeAES(JSON.stringify(params));

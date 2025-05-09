@@ -15,7 +15,9 @@ const undoFactory = utils.apiFactory()((api, ctx, utils) => {
     /**
      * Undo a message
      *
-     * @param message Message or GroupMessage instance that has quote to undo
+     * @param options Undo options
+     * @param threadId group or user id
+     * @param type Message type (User or GroupMessage)
      *
      * @throws ZaloApiError
      */

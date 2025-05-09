@@ -1,5 +1,5 @@
 import { Listener } from "./apis/listen.js";
-import { type ContextSession, type Options } from "./context.js";
+import { type ContextSession, type Options, type ZPWServiceMap } from "./context.js";
 import toughCookie from "tough-cookie";
 import { acceptFriendRequestFactory } from "./apis/acceptFriendRequest.js";
 import { addGroupDeputyFactory } from "./apis/addGroupDeputy.js";
@@ -26,12 +26,14 @@ import { getAllGroupsFactory } from "./apis/getAllGroups.js";
 import { getContextFactory } from "./apis/getContext.js";
 import { getCookieFactory } from "./apis/getCookie.js";
 import { getGroupInfoFactory } from "./apis/getGroupInfo.js";
+import { getGroupMembersInfoFactory } from "./apis/getGroupMembersInfo.js";
 import { getOwnIdFactory } from "./apis/getOwnId.js";
 import { getPollDetailFactory } from "./apis/getPollDetail.js";
 import { getQRFactory } from "./apis/getQR.js";
 import { getStickersFactory } from "./apis/getStickers.js";
 import { getStickersDetailFactory } from "./apis/getStickersDetail.js";
 import { getUserInfoFactory } from "./apis/getUserInfo.js";
+import { keepAliveFactory } from "./apis/keepAlive.js";
 import { lockPollFactory } from "./apis/lockPoll.js";
 import { type LoginQRCallback } from "./apis/loginQR.js";
 import { pinConversationsFactory } from "./apis/pinConversations.js";
@@ -50,6 +52,10 @@ import { sendVoiceFactory } from "./apis/sendVoice.js";
 import { unblockUserFactory } from "./apis/unblockUser.js";
 import { undoFactory } from "./apis/undo.js";
 import { uploadAttachmentFactory } from "./apis/uploadAttachment.js";
+import { customFactory } from "./apis/custom.js";
+import { getLabelsFactory } from "./apis/getLabels.js";
+import { updateLabelsFactory } from "./apis/updateLabels.js";
+import { getRequestedFriendsFactory } from "./apis/getRequestedFriends.js";
 export type Cookie = {
     domain: string;
     expirationDate: number;
@@ -90,8 +96,8 @@ export declare class Zalo {
     }, callback?: LoginQRCallback): Promise<API>;
 }
 export declare class API {
-    zpwServiceMap: Record<string, string[]>;
-    listener: Listener | undefined;
+    zpwServiceMap: ZPWServiceMap;
+    listener: Listener;
     acceptFriendRequest: ReturnType<typeof acceptFriendRequestFactory>;
     addGroupDeputy: ReturnType<typeof addGroupDeputyFactory>;
     addReaction: ReturnType<typeof addReactionFactory>;
@@ -113,9 +119,12 @@ export declare class API {
     fetchAccountInfo: ReturnType<typeof fetchAccountInfoFactory>;
     findUser: ReturnType<typeof findUserFactory>;
     getAllFriends: ReturnType<typeof getAllFriendsFactory>;
+    getRequestedFriends: ReturnType<typeof getRequestedFriendsFactory>;
     getAllGroups: ReturnType<typeof getAllGroupsFactory>;
     getCookie: ReturnType<typeof getCookieFactory>;
     getGroupInfo: ReturnType<typeof getGroupInfoFactory>;
+    getGroupMembersInfo: ReturnType<typeof getGroupMembersInfoFactory>;
+    getLabels: ReturnType<typeof getLabelsFactory>;
     getOwnId: ReturnType<typeof getOwnIdFactory>;
     getPollDetail: ReturnType<typeof getPollDetailFactory>;
     getContext: ReturnType<typeof getContextFactory>;
@@ -123,6 +132,7 @@ export declare class API {
     getStickers: ReturnType<typeof getStickersFactory>;
     getStickersDetail: ReturnType<typeof getStickersDetailFactory>;
     getUserInfo: ReturnType<typeof getUserInfoFactory>;
+    keepAlive: ReturnType<typeof keepAliveFactory>;
     lockPoll: ReturnType<typeof lockPollFactory>;
     pinConversations: ReturnType<typeof pinConversationsFactory>;
     removeGroupDeputy: ReturnType<typeof removeGroupDeputyFactory>;
@@ -139,6 +149,8 @@ export declare class API {
     sendVoice: ReturnType<typeof sendVoiceFactory>;
     unblockUser: ReturnType<typeof unblockUserFactory>;
     undo: ReturnType<typeof undoFactory>;
+    updateLabels: ReturnType<typeof updateLabelsFactory>;
     uploadAttachment: ReturnType<typeof uploadAttachmentFactory>;
-    constructor(ctx: ContextSession, zpwServiceMap: Record<string, string[]>, wsUrl: string);
+    custom: ReturnType<typeof customFactory>;
+    constructor(ctx: ContextSession, zpwServiceMap: ZPWServiceMap, wsUrls: string[]);
 }

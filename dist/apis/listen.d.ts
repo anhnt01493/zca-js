@@ -31,6 +31,7 @@ interface ListenerEvents {
     seen_messages: [messages: SeenMessage[]];
     delivered_messages: [messages: DeliveredMessage[]];
     reaction: [reaction: Reaction];
+    old_reactions: [reactions: Reaction[]];
     upload_attachment: [data: UploadEventData];
     undo: [data: Undo];
     friend_event: [data: FriendEvent];
@@ -39,10 +40,13 @@ interface ListenerEvents {
 }
 export declare class Listener extends EventEmitter<ListenerEvents> {
     private ctx;
-    private url;
+    private urls;
+    private wsURL;
     private cookie;
     private userAgent;
     private ws;
+    private retryCount;
+    private rotateCount;
     private onConnectedCallback;
     private onClosedCallback;
     private onErrorCallback;
@@ -51,12 +55,29 @@ export declare class Listener extends EventEmitter<ListenerEvents> {
     private selfListen;
     private pingInterval?;
     private id;
-    constructor(ctx: ContextSession, url: string);
+    constructor(ctx: ContextSession, urls: string[]);
+    /**
+     * @deprecated Use `on` method instead
+     */
     onConnected(cb: Function): void;
+    /**
+     * @deprecated Use `on` method instead
+     */
     onClosed(cb: Function): void;
+    /**
+     * @deprecated Use `on` method instead
+     */
     onError(cb: Function): void;
+    /**
+     * @deprecated Use `on` method instead
+     */
     onMessage(cb: OnMessageCallback): void;
-    start(): void;
+    private canRetry;
+    private shouldRotate;
+    private rotateEndpoint;
+    start({ retryOnClose }?: {
+        retryOnClose?: boolean;
+    }): void;
     stop(): void;
     sendWs(payload: WsPayload, requireId?: boolean): void;
     /**
@@ -65,10 +86,57 @@ export declare class Listener extends EventEmitter<ListenerEvents> {
      * @param lastMsgId
      */
     requestOldMessages(threadType: ThreadType, lastMsgId?: string | null): void;
+    /**
+     * Request old messages
+     *
+     * @param lastMsgId
+     */
+    requestOldReactions(threadType: ThreadType, lastMsgId?: string | null): void;
+    private reset;
     getConnectionInfo(): {
         secretKey: string;
         uuid: string;
-        zpwServiceMap: Record<string, string[]>;
+        zpwServiceMap: {
+            other_contact: string[];
+            chat_e2e: string[];
+            workspace: string[];
+            catalog: string[];
+            boards: string[];
+            downloadStickerUrl: string[];
+            sp_contact: string[];
+            media_store_send2me: string[];
+            push_act: string[];
+            aext: string[];
+            zfamily: string[];
+            group_poll: string[];
+            group_cloud_message: string[];
+            media_store: string[];
+            file: string[];
+            auto_reply: string[];
+            sync_action: string[];
+            friendLan: string[];
+            friend: string[];
+            alias: string[];
+            zimsg: string[];
+            group_board: string[];
+            conversation: string[];
+            group: string[];
+            fallback_LP: string[];
+            friend_board: string[];
+            zavi: string[];
+            reaction: string[];
+            voice_call: string[];
+            profile: string[];
+            sticker: string[];
+            label: string[];
+            consent: string[];
+            zcloud: string[];
+            chat: string[];
+            todoUrl: string[];
+            recent_search: string[];
+            group_e2e: string[];
+            quick_message: string[];
+        };
     };
 }
 export {};

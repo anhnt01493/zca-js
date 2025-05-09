@@ -1,4 +1,4 @@
-export type GetAllFriendsResponse = {
+export type GetRequestedFriendsResponse = {
     userId: string;
     username: string;
     displayName: string;
@@ -33,4 +33,4 @@ export type GetAllFriendsResponse = {
     createdTs: number;
     oa_status: any;
 }[];
-export declare const getAllFriendsFactory: (ctx: import("../context.js").ContextBase, api: import("../zalo.js").API) => (count?: number, page?: number) => Promise<GetAllFriendsResponse>;
+export declare const getRequestedFriendsFactory: (ctx: import("../context.js").ContextBase, api: import("../zalo.js").API) => () => Promise<GetRequestedFriendsResponse>;

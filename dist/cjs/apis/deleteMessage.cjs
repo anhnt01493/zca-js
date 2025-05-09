@@ -4,55 +4,53 @@ var ZaloApiError = require('../Errors/ZaloApiError.cjs');
 var Enum = require('../models/Enum.cjs');
 require('../models/FriendEvent.cjs');
 require('../models/GroupEvent.cjs');
-var Message = require('../models/Message.cjs');
 require('../models/Reaction.cjs');
 var utils = require('../utils.cjs');
 
-const deleteMessageFactory = utils.apiFactory()((api, ctx, utils$1) => {
+const deleteMessageFactory = utils.apiFactory()((api, ctx, utils) => {
     const serviceURL = {
-        [Enum.ThreadType.User]: utils$1.makeURL(`${api.zpwServiceMap.chat[0]}/api/message/delete`),
-        [Enum.ThreadType.Group]: utils$1.makeURL(`${api.zpwServiceMap.group[0]}/api/group/deletemsg`),
+        [Enum.ThreadType.User]: utils.makeURL(`${api.zpwServiceMap.chat[0]}/api/message/delete`),
+        [Enum.ThreadType.Group]: utils.makeURL(`${api.zpwServiceMap.group[0]}/api/group/deletemsg`),
     };
     /**
      * Delete a message
      *
-     * @param message Message or GroupMessage instance
+     * @param options Delete target data
      * @param onlyMe Delete message for only you
      *
      * @throws ZaloApiError
      */
-    return async function deleteMessage(message, onlyMe = true) {
-        var _a;
-        if (!(message instanceof Message.UserMessage) && !(message instanceof Message.GroupMessage))
-            throw new ZaloApiError.ZaloApiError("Expected Message or GroupMessage instance, got: " + ((_a = message === null || message === void 0 ? void 0 : message.constructor) === null || _a === void 0 ? void 0 : _a.name));
-        if (message.isSelf && onlyMe === false)
+    return async function deleteMessage(options, threadId, type = Enum.ThreadType.User) {
+        const isGroup = type === Enum.ThreadType.Group;
+        const isSelf = ctx.uid == options.uidFrom;
+        if (isSelf && options.onlyMe === false)
             throw new ZaloApiError.ZaloApiError("To delete your message for everyone, use undo api instead");
         const params = {
-            toid: message instanceof Message.UserMessage ? message.threadId : undefined,
-            grid: message instanceof Message.GroupMessage ? message.threadId : undefined,
+            [isGroup ? "grid" : "toid"]: threadId,
             cliMsgId: Date.now(),
             msgs: [
                 {
-                    cliMsgId: String(message.data.cliMsgId),
-                    globalMsgId: String(message.data.msgId),
-                    ownerId: String(message.data.uidFrom),
-                    destId: String(message.threadId),
+                    cliMsgId: options.cliMsgId,
+                    globalMsgId: options.msgId,
+                    ownerId: options.uidFrom,
+                    destId: threadId,
                 },
             ],
-            onlyMe: onlyMe ? 1 : 0,
-            imei: message instanceof Message.UserMessage ? ctx.imei : undefined,
+            onlyMe: options.onlyMe ? 1 : 0,
         };
-        utils.removeUndefinedKeys(params);
-        const encryptedParams = utils$1.encodeAES(JSON.stringify(params));
+        if (!isGroup) {
+            params.imei = ctx.imei;
+        }
+        const encryptedParams = utils.encodeAES(JSON.stringify(params));
         if (!encryptedParams)
             throw new ZaloApiError.ZaloApiError("Failed to encrypt message");
-        const response = await utils$1.request(serviceURL[message.type], {
+        const response = await utils.request(serviceURL[type], {
             method: "POST",
             body: new URLSearchParams({
                 params: encryptedParams,
             }),
         });
-        return utils$1.resolve(response);
+        return utils.resolve(response);
     };
 });
 

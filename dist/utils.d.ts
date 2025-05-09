@@ -106,14 +106,15 @@ type ZaloResponse<T> = {
         code?: number;
     } | null;
 };
-export declare function handleZaloResponse<T = any>(ctx: ContextSession, response: Response): Promise<ZaloResponse<T>>;
-export declare function resolveResponse<T = any>(ctx: ContextSession, res: Response, cb?: (result: ZaloResponse<unknown>) => T): Promise<T>;
-export declare function apiFactory<T>(): <K extends (api: API, ctx: ContextSession, utils: {
+export declare function handleZaloResponse<T = any>(ctx: ContextSession, response: Response, isEncrypted?: boolean): Promise<ZaloResponse<T>>;
+export declare function resolveResponse<T = any>(ctx: ContextSession, res: Response, cb?: (result: ZaloResponse<unknown>) => T, isEncrypted?: boolean): Promise<T>;
+export type FactoryUtils<T> = {
     makeURL: (baseURL: string, params?: Record<string, any>, apiVersion?: boolean) => ReturnType<typeof makeURL>;
     encodeAES: (data: any, t?: number) => ReturnType<typeof encodeAES>;
     request: (url: string, options?: RequestInit, raw?: boolean) => ReturnType<typeof request>;
     logger: ReturnType<typeof logger>;
-    resolve: (res: Response, cb?: (result: ZaloResponse<unknown>) => T) => ReturnType<typeof resolveResponse<T>>;
-}) => any>(callback: K) => (ctx: ContextBase, api: API) => ReturnType<K>;
+    resolve: (res: Response, cb?: (result: ZaloResponse<unknown>) => T, isEncrypted?: boolean) => ReturnType<typeof resolveResponse<T>>;
+};
+export declare function apiFactory<T>(): <K extends (api: API, ctx: ContextSession, utils: FactoryUtils<T>) => any>(callback: K) => (ctx: ContextBase, api: API) => ReturnType<K>;
 export declare function generateZaloUUID(userAgent: string): string;
 export {};

@@ -30,12 +30,14 @@ var getAllGroups = require('./apis/getAllGroups.cjs');
 var getContext = require('./apis/getContext.cjs');
 var getCookie = require('./apis/getCookie.cjs');
 var getGroupInfo = require('./apis/getGroupInfo.cjs');
+var getGroupMembersInfo = require('./apis/getGroupMembersInfo.cjs');
 var getOwnId = require('./apis/getOwnId.cjs');
 var getPollDetail = require('./apis/getPollDetail.cjs');
 var getQR = require('./apis/getQR.cjs');
 var getStickers = require('./apis/getStickers.cjs');
 var getStickersDetail = require('./apis/getStickersDetail.cjs');
 var getUserInfo = require('./apis/getUserInfo.cjs');
+var keepAlive = require('./apis/keepAlive.cjs');
 var lockPoll = require('./apis/lockPoll.cjs');
 var loginQR = require('./apis/loginQR.cjs');
 var pinConversations = require('./apis/pinConversations.cjs');
@@ -56,6 +58,10 @@ var undo = require('./apis/undo.cjs');
 var uploadAttachment = require('./apis/uploadAttachment.cjs');
 var ZaloApiError = require('./Errors/ZaloApiError.cjs');
 var update = require('./update.cjs');
+var custom = require('./apis/custom.cjs');
+var getLabels = require('./apis/getLabels.cjs');
+var updateLabels = require('./apis/updateLabels.cjs');
+var getRequestedFriends = require('./apis/getRequestedFriends.cjs');
 
 class Zalo {
     constructor(options = {}) {
@@ -122,9 +128,7 @@ class Zalo {
         if (!context.isContextSession(ctx))
             throw new Error("Khởi tạo ngữ cảnh thát bại.");
         utils.logger(ctx).info("Logged in as", loginData.data.uid);
-        return new API(ctx, loginData.data.zpw_service_map_v3, utils.makeURL(ctx, loginData.data.zpw_ws[0], {
-            t: Date.now(),
-        }));
+        return new API(ctx, loginData.data.zpw_service_map_v3, loginData.data.zpw_ws);
     }
     async loginPublisherWithCookie(ctx, credentials, secretKey, uuid, zpwService) {
         await update.checkUpdate(ctx);
@@ -133,18 +137,21 @@ class Zalo {
         ctx.cookie = this.parseCookies(credentials.cookie);
         ctx.userAgent = credentials.userAgent;
         ctx.language = credentials.language || "vi";
+        const loginData = await login.login(ctx, this.enableEncryptParam);
         const serverInfo = await login.getServerInfo(ctx, this.enableEncryptParam);
-        if (!serverInfo)
+        if (!loginData || !serverInfo)
             throw new Error("Đăng nhập thất bại");
-        ctx.secretKey = secretKey;
-        ctx.uid = uuid;
+        ctx.secretKey = loginData.data.zpw_enk;
+        ctx.uid = loginData.data.uid;
+        ctx.zpwServiceMap = loginData.data.zpw_service_map_v3;
         // Zalo currently responds with setttings instead of settings
         // they might fix this in the future, so we should have a fallback just in case
         ctx.settings = serverInfo.setttings || serverInfo.settings;
         ctx.extraVer = serverInfo.extra_ver;
         if (!context.isContextSession(ctx))
             throw new Error("Khởi tạo ngữ cảnh thát bại.");
-        return new API(ctx, zpwService, "");
+        utils.logger(ctx).info("Logged in as", loginData.data.uid);
+        return new API(ctx, loginData.data.zpw_service_map_v3, loginData.data.zpw_ws);
     }
     async loginQR(options, callback) {
         if (!options)
@@ -180,11 +187,9 @@ class Zalo {
     }
 }
 class API {
-    constructor(ctx, zpwServiceMap, wsUrl) {
+    constructor(ctx, zpwServiceMap, wsUrls) {
         this.zpwServiceMap = zpwServiceMap;
-        if (wsUrl) {
-            this.listener = new listen.Listener(ctx, wsUrl);
-        }
+        this.listener = new listen.Listener(ctx, wsUrls);
         this.acceptFriendRequest = acceptFriendRequest.acceptFriendRequestFactory(ctx, this);
         this.addGroupDeputy = addGroupDeputy.addGroupDeputyFactory(ctx, this);
         this.addReaction = addReaction.addReactionFactory(ctx, this);
@@ -206,9 +211,12 @@ class API {
         this.fetchAccountInfo = fetchAccountInfo.fetchAccountInfoFactory(ctx, this);
         this.findUser = findUser.findUserFactory(ctx, this);
         this.getAllFriends = getAllFriends.getAllFriendsFactory(ctx, this);
+        this.getRequestedFriends = getRequestedFriends.getRequestedFriendsFactory(ctx, this);
         this.getAllGroups = getAllGroups.getAllGroupsFactory(ctx, this);
         this.getCookie = getCookie.getCookieFactory(ctx, this);
         this.getGroupInfo = getGroupInfo.getGroupInfoFactory(ctx, this);
+        this.getGroupMembersInfo = getGroupMembersInfo.getGroupMembersInfoFactory(ctx, this);
+        this.getLabels = getLabels.getLabelsFactory(ctx, this);
         this.getOwnId = getOwnId.getOwnIdFactory(ctx, this);
         this.getPollDetail = getPollDetail.getPollDetailFactory(ctx, this);
         this.getContext = getContext.getContextFactory(ctx, this);
@@ -216,6 +224,7 @@ class API {
         this.getStickers = getStickers.getStickersFactory(ctx, this);
         this.getStickersDetail = getStickersDetail.getStickersDetailFactory(ctx, this);
         this.getUserInfo = getUserInfo.getUserInfoFactory(ctx, this);
+        this.keepAlive = keepAlive.keepAliveFactory(ctx, this);
         this.lockPoll = lockPoll.lockPollFactory(ctx, this);
         this.pinConversations = pinConversations.pinConversationsFactory(ctx, this);
         this.removeGroupDeputy = removeGroupDeputy.removeGroupDeputyFactory(ctx, this);
@@ -232,7 +241,9 @@ class API {
         this.sendVoice = sendVoice.sendVoiceFactory(ctx, this);
         this.unblockUser = unblockUser.unblockUserFactory(ctx, this);
         this.undo = undo.undoFactory(ctx, this);
+        this.updateLabels = updateLabels.updateLabelsFactory(ctx, this);
         this.uploadAttachment = uploadAttachment.uploadAttachmentFactory(ctx, this);
+        this.custom = custom.customFactory(ctx, this);
     }
 }
 

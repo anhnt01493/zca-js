@@ -1,10 +1,20 @@
-import { GroupMessage, UserMessage, ThreadType } from "../models/index.js";
+import { ThreadType, type TMessage } from "../models/index.js";
 export type SendMessageResult = {
     msgId: number;
 };
 export type SendMessageResponse = {
     message: SendMessageResult | null;
     attachment: SendMessageResult[];
+};
+export type SendMessageQuote = {
+    content: TMessage["content"];
+    msgType: TMessage["msgType"];
+    propertyExt: TMessage["propertyExt"];
+    uidFrom: TMessage["uidFrom"];
+    msgId: TMessage["msgId"];
+    cliMsgId: TMessage["cliMsgId"];
+    ts: TMessage["ts"];
+    ttl: TMessage["ttl"];
 };
 export declare enum TextStyle {
     Bold = "b",
@@ -69,7 +79,7 @@ export type MessageContent = {
     /**
      * Quoted message (optional)
      */
-    quote?: UserMessage | GroupMessage;
+    quote?: SendMessageQuote;
     /**
      * Mentions in the message (optional)
      */

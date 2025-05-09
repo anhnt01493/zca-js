@@ -1,7 +1,7 @@
 import { Listener } from "./apis/listen.js";
 import { getServerInfo, login } from "./apis/login.js";
-import { createContext, isContextSession } from "./context.js";
-import { generateZaloUUID, logger, makeURL } from "./utils.js";
+import { createContext, isContextSession, } from "./context.js";
+import { generateZaloUUID, logger } from "./utils.js";
 import toughCookie from "tough-cookie";
 import { acceptFriendRequestFactory } from "./apis/acceptFriendRequest.js";
 import { addGroupDeputyFactory } from "./apis/addGroupDeputy.js";
@@ -28,12 +28,14 @@ import { getAllGroupsFactory } from "./apis/getAllGroups.js";
 import { getContextFactory } from "./apis/getContext.js";
 import { getCookieFactory } from "./apis/getCookie.js";
 import { getGroupInfoFactory } from "./apis/getGroupInfo.js";
+import { getGroupMembersInfoFactory } from "./apis/getGroupMembersInfo.js";
 import { getOwnIdFactory } from "./apis/getOwnId.js";
 import { getPollDetailFactory } from "./apis/getPollDetail.js";
 import { getQRFactory } from "./apis/getQR.js";
 import { getStickersFactory } from "./apis/getStickers.js";
 import { getStickersDetailFactory } from "./apis/getStickersDetail.js";
 import { getUserInfoFactory } from "./apis/getUserInfo.js";
+import { keepAliveFactory } from "./apis/keepAlive.js";
 import { lockPollFactory } from "./apis/lockPoll.js";
 import { loginQR, LoginQRCallbackEventType } from "./apis/loginQR.js";
 import { pinConversationsFactory } from "./apis/pinConversations.js";
@@ -54,6 +56,10 @@ import { undoFactory } from "./apis/undo.js";
 import { uploadAttachmentFactory } from "./apis/uploadAttachment.js";
 import { ZaloApiError } from "./Errors/ZaloApiError.js";
 import { checkUpdate } from "./update.js";
+import { customFactory } from "./apis/custom.js";
+import { getLabelsFactory } from "./apis/getLabels.js";
+import { updateLabelsFactory } from "./apis/updateLabels.js";
+import { getRequestedFriendsFactory } from "./apis/getRequestedFriends.js";
 export class Zalo {
     constructor(options = {}) {
         this.options = options;
@@ -119,9 +125,7 @@ export class Zalo {
         if (!isContextSession(ctx))
             throw new Error("Khởi tạo ngữ cảnh thát bại.");
         logger(ctx).info("Logged in as", loginData.data.uid);
-        return new API(ctx, loginData.data.zpw_service_map_v3, makeURL(ctx, loginData.data.zpw_ws[0], {
-            t: Date.now(),
-        }));
+        return new API(ctx, loginData.data.zpw_service_map_v3, loginData.data.zpw_ws);
     }
     async loginPublisherWithCookie(ctx, credentials, secretKey, uuid, zpwService) {
         await checkUpdate(ctx);
@@ -130,18 +134,21 @@ export class Zalo {
         ctx.cookie = this.parseCookies(credentials.cookie);
         ctx.userAgent = credentials.userAgent;
         ctx.language = credentials.language || "vi";
+        const loginData = await login(ctx, this.enableEncryptParam);
         const serverInfo = await getServerInfo(ctx, this.enableEncryptParam);
-        if (!serverInfo)
+        if (!loginData || !serverInfo)
             throw new Error("Đăng nhập thất bại");
-        ctx.secretKey = secretKey;
-        ctx.uid = uuid;
+        ctx.secretKey = loginData.data.zpw_enk;
+        ctx.uid = loginData.data.uid;
+        ctx.zpwServiceMap = loginData.data.zpw_service_map_v3;
         // Zalo currently responds with setttings instead of settings
         // they might fix this in the future, so we should have a fallback just in case
         ctx.settings = serverInfo.setttings || serverInfo.settings;
         ctx.extraVer = serverInfo.extra_ver;
         if (!isContextSession(ctx))
             throw new Error("Khởi tạo ngữ cảnh thát bại.");
-        return new API(ctx, zpwService, "");
+        logger(ctx).info("Logged in as", loginData.data.uid);
+        return new API(ctx, loginData.data.zpw_service_map_v3, loginData.data.zpw_ws);
     }
     async loginQR(options, callback) {
         if (!options)
@@ -177,11 +184,9 @@ export class Zalo {
     }
 }
 export class API {
-    constructor(ctx, zpwServiceMap, wsUrl) {
+    constructor(ctx, zpwServiceMap, wsUrls) {
         this.zpwServiceMap = zpwServiceMap;
-        if (wsUrl) {
-            this.listener = new Listener(ctx, wsUrl);
-        }
+        this.listener = new Listener(ctx, wsUrls);
         this.acceptFriendRequest = acceptFriendRequestFactory(ctx, this);
         this.addGroupDeputy = addGroupDeputyFactory(ctx, this);
         this.addReaction = addReactionFactory(ctx, this);
@@ -203,9 +208,12 @@ export class API {
         this.fetchAccountInfo = fetchAccountInfoFactory(ctx, this);
         this.findUser = findUserFactory(ctx, this);
         this.getAllFriends = getAllFriendsFactory(ctx, this);
+        this.getRequestedFriends = getRequestedFriendsFactory(ctx, this);
         this.getAllGroups = getAllGroupsFactory(ctx, this);
         this.getCookie = getCookieFactory(ctx, this);
         this.getGroupInfo = getGroupInfoFactory(ctx, this);
+        this.getGroupMembersInfo = getGroupMembersInfoFactory(ctx, this);
+        this.getLabels = getLabelsFactory(ctx, this);
         this.getOwnId = getOwnIdFactory(ctx, this);
         this.getPollDetail = getPollDetailFactory(ctx, this);
         this.getContext = getContextFactory(ctx, this);
@@ -213,6 +221,7 @@ export class API {
         this.getStickers = getStickersFactory(ctx, this);
         this.getStickersDetail = getStickersDetailFactory(ctx, this);
         this.getUserInfo = getUserInfoFactory(ctx, this);
+        this.keepAlive = keepAliveFactory(ctx, this);
         this.lockPoll = lockPollFactory(ctx, this);
         this.pinConversations = pinConversationsFactory(ctx, this);
         this.removeGroupDeputy = removeGroupDeputyFactory(ctx, this);
@@ -229,6 +238,8 @@ export class API {
         this.sendVoice = sendVoiceFactory(ctx, this);
         this.unblockUser = unblockUserFactory(ctx, this);
         this.undo = undoFactory(ctx, this);
+        this.updateLabels = updateLabelsFactory(ctx, this);
         this.uploadAttachment = uploadAttachmentFactory(ctx, this);
+        this.custom = customFactory(ctx, this);
     }
 }

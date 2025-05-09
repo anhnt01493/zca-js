@@ -6,7 +6,6 @@ var ZaloApiError = require('../Errors/ZaloApiError.cjs');
 var Enum = require('../models/Enum.cjs');
 require('../models/FriendEvent.cjs');
 require('../models/GroupEvent.cjs');
-var Message = require('../models/Message.cjs');
 require('../models/Reaction.cjs');
 var utils = require('../utils.cjs');
 
@@ -17,7 +16,7 @@ const attachmentUrlType = {
     others: "asyncfile/msg?",
 };
 function prepareQMSGAttach(quote) {
-    const quoteData = quote.data;
+    const quoteData = quote;
     if (typeof quoteData.content == "string")
         return quoteData.propertyExt;
     if (quoteData.msgType == "chat.todo")
@@ -33,7 +32,7 @@ function prepareQMSGAttach(quote) {
     return Object.assign(Object.assign({}, quoteData.content), { thumbUrl: quoteData.content.thumb, oriUrl: quoteData.content.href, normalUrl: quoteData.content.href });
 }
 function prepareQMSG(quote) {
-    const quoteData = quote.data;
+    const quoteData = quote;
     if (quoteData.msgType == "chat.todo" && typeof quoteData.content != "string") {
         return JSON.parse(quoteData.content.params).item.content;
     }
@@ -151,18 +150,14 @@ const sendMessageFactory = utils.apiFactory()((api, ctx, utils$1) => {
     async function handleMessage({ msg, styles, urgency, mentions, quote, ttl }, threadId, type) {
         if (!msg || msg.length == 0)
             throw new ZaloApiError.ZaloApiError("Missing message content");
-        const isValidInstance = quote instanceof Message.UserMessage || quote instanceof Message.GroupMessage;
-        if (quote && !isValidInstance)
-            throw new ZaloApiError.ZaloApiError("Invalid quote message");
         const isGroupMessage = type == Enum.ThreadType.Group;
         const { mentionsFinal, msgFinal } = handleMentions(type, msg, mentions);
         msg = msgFinal;
-        const quoteData = quote === null || quote === void 0 ? void 0 : quote.data;
-        if (quoteData) {
-            if (typeof quoteData.content != "string" && quoteData.msgType == "webchat") {
+        if (quote) {
+            if (typeof quote.content != "string" && quote.msgType == "webchat") {
                 throw new ZaloApiError.ZaloApiError("This kind of `webchat` quote type is not available");
             }
-            if (quoteData.msgType == "group.poll") {
+            if (quote.msgType == "group.poll") {
                 throw new ZaloApiError.ZaloApiError("The `group.poll` quote type is not available");
             }
         }
@@ -174,16 +169,16 @@ const sendMessageFactory = utils.apiFactory()((api, ctx, utils$1) => {
                 message: msg,
                 clientId: Date.now(),
                 mentionInfo: isMentionsValid ? JSON.stringify(mentionsFinal) : undefined,
-                qmsgOwner: quoteData.uidFrom,
-                qmsgId: quoteData.msgId,
-                qmsgCliId: quoteData.cliMsgId,
-                qmsgType: utils.getClientMessageType(quoteData.msgType),
-                qmsgTs: quoteData.ts,
-                qmsg: typeof quoteData.content == "string" ? quoteData.content : prepareQMSG(quote),
+                qmsgOwner: quote.uidFrom,
+                qmsgId: quote.msgId,
+                qmsgCliId: quote.cliMsgId,
+                qmsgType: utils.getClientMessageType(quote.msgType),
+                qmsgTs: quote.ts,
+                qmsg: typeof quote.content == "string" ? quote.content : prepareQMSG(quote),
                 imei: isGroupMessage ? undefined : ctx.imei,
                 visibility: isGroupMessage ? 0 : undefined,
                 qmsgAttach: isGroupMessage ? JSON.stringify(prepareQMSGAttach(quote)) : undefined,
-                qmsgTTL: quoteData.ttl,
+                qmsgTTL: quote.ttl,
                 ttl: ttl !== null && ttl !== void 0 ? ttl : 0,
             }
             : {
