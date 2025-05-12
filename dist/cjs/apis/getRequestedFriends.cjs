@@ -6,10 +6,8 @@ var utils = require('../utils.cjs');
 const getRequestedFriendsFactory = utils.apiFactory()((api, ctx, utils) => {
     const serviceURL = utils.makeURL(`${api.zpwServiceMap.friend[0]}/api/friend/requested/list`);
     /**
-     * Get all friends
+     * Get requested friends
      *
-     * @param count Page size (default: 20000)
-     * @param page Page number (default: 1)
      *
      * @throws ZaloApiError
      */

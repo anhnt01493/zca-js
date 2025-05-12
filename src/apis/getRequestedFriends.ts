@@ -41,10 +41,8 @@ export const getRequestedFriendsFactory = apiFactory<GetRequestedFriendsResponse
     const serviceURL = utils.makeURL(`${api.zpwServiceMap.friend[0]}/api/friend/requested/list`);
 
     /**
-     * Get all friends
-     * 
-     * @param count Page size (default: 20000)
-     * @param page Page number (default: 1)
+     * Get requested friends
+     *
      * 
      * @throws ZaloApiError
      */
