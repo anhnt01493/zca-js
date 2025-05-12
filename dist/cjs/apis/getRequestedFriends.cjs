@@ -4,7 +4,7 @@ var ZaloApiError = require('../Errors/ZaloApiError.cjs');
 var utils = require('../utils.cjs');
 
 const getRequestedFriendsFactory = utils.apiFactory()((api, ctx, utils) => {
-    const serviceURL = utils.makeURL(`${api.zpwServiceMap.friend[0]}/api/friend/requested/list`);
+    const serviceURL = utils.makeURL(`${api.zpwServiceMap.friend[0]}/api/friend/recommendsv2/list`);
     /**
      * Get requested friends
      *
