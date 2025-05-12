@@ -21,11 +21,9 @@ const getRequestedFriendsFactory = utils.apiFactory()((api, ctx, utils) => {
         const url = utils.makeURL(serviceURL, {
             params: encryptedParams,
         });
-        console.log(url);
         const response = await utils.request(url, {
             method: "GET",
         });
-        console.log(response);
         return utils.resolve(response);
     };
 });
