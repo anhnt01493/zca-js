@@ -58,16 +58,12 @@ export const getRequestedFriendsFactory = apiFactory<GetRequestedFriendsResponse
             params: encryptedParams,
         })
 
-        console.log(url);
-
         const response = await utils.request(
             url,
             {
                 method: "GET",
             },
         );
-
-        console.log(response)
 
         return utils.resolve(response);
     };

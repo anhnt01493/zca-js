@@ -579,8 +579,6 @@ export async function handleZaloResponse<T = any>(ctx: ContextSession, response:
             data: any;
         } = await response.json();
 
-        console.log("jsonData", jsonData);
-
         if (jsonData.error_code != 0) {
             result.error = {
                 message: jsonData.error_message,
@@ -594,8 +592,6 @@ export async function handleZaloResponse<T = any>(ctx: ContextSession, response:
             error_message: string;
             data: T;
         } = isEncrypted ? JSON.parse(decodeAES(ctx.secretKey!, jsonData.data)!) : jsonData;
-
-        console.log("decodedData", decodedData)
 
         if (decodedData.error_code != 0) {
             result.error = {
