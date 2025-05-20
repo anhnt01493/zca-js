@@ -56,6 +56,7 @@ import { customFactory } from "./apis/custom.js";
 import { getLabelsFactory } from "./apis/getLabels.js";
 import { updateLabelsFactory } from "./apis/updateLabels.js";
 import { getRequestedFriendsFactory } from "./apis/getRequestedFriends.js";
+import { rejectFriendRequestFactory } from "./apis/rejectFriendRequest.js";
 export type Cookie = {
     domain: string;
     expirationDate: number;
@@ -99,6 +100,7 @@ export declare class API {
     zpwServiceMap: ZPWServiceMap;
     listener: Listener;
     acceptFriendRequest: ReturnType<typeof acceptFriendRequestFactory>;
+    rejectFriendRequest: ReturnType<typeof rejectFriendRequestFactory>;
     addGroupDeputy: ReturnType<typeof addGroupDeputyFactory>;
     addReaction: ReturnType<typeof addReactionFactory>;
     addUserToGroup: ReturnType<typeof addUserToGroupFactory>;

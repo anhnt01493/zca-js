@@ -60,6 +60,7 @@ import { customFactory } from "./apis/custom.js";
 import { getLabelsFactory } from "./apis/getLabels.js";
 import { updateLabelsFactory } from "./apis/updateLabels.js";
 import { getRequestedFriendsFactory } from "./apis/getRequestedFriends.js";
+import { rejectFriendRequestFactory } from "./apis/rejectFriendRequest.js";
 export class Zalo {
     constructor(options = {}) {
         this.options = options;
@@ -188,6 +189,7 @@ export class API {
         this.zpwServiceMap = zpwServiceMap;
         this.listener = new Listener(ctx, wsUrls);
         this.acceptFriendRequest = acceptFriendRequestFactory(ctx, this);
+        this.rejectFriendRequest = rejectFriendRequestFactory(ctx, this);
         this.addGroupDeputy = addGroupDeputyFactory(ctx, this);
         this.addReaction = addReactionFactory(ctx, this);
         this.addUserToGroup = addUserToGroupFactory(ctx, this);

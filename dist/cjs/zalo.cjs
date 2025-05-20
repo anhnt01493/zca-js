@@ -62,6 +62,7 @@ var custom = require('./apis/custom.cjs');
 var getLabels = require('./apis/getLabels.cjs');
 var updateLabels = require('./apis/updateLabels.cjs');
 var getRequestedFriends = require('./apis/getRequestedFriends.cjs');
+var rejectFriendRequest = require('./apis/rejectFriendRequest.cjs');
 
 class Zalo {
     constructor(options = {}) {
@@ -191,6 +192,7 @@ class API {
         this.zpwServiceMap = zpwServiceMap;
         this.listener = new listen.Listener(ctx, wsUrls);
         this.acceptFriendRequest = acceptFriendRequest.acceptFriendRequestFactory(ctx, this);
+        this.rejectFriendRequest = rejectFriendRequest.rejectFriendRequestFactory(ctx, this);
         this.addGroupDeputy = addGroupDeputy.addGroupDeputyFactory(ctx, this);
         this.addReaction = addReaction.addReactionFactory(ctx, this);
         this.addUserToGroup = addUserToGroup.addUserToGroupFactory(ctx, this);
