@@ -202,6 +202,7 @@ export class Listener extends EventEmitter<ListenerEvents> {
         };
 
         ws.onclose = (event) => {
+            console.log("onClose socket", this.ctx.uid, this.ctx.imei, JSON.stringify(event))
             this.reset();
             const retry = retryOnClose && this.canRetry(event.code as CloseReason);
             if (retry && retryOnClose) {
@@ -219,6 +220,7 @@ export class Listener extends EventEmitter<ListenerEvents> {
         };
 
         ws.onerror = (event) => {
+            console.log("onClose socket", this.ctx.uid, this.ctx.imei, event)
             this.onErrorCallback(event);
             this.emit("error", event);
         };
