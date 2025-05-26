@@ -444,7 +444,8 @@ function getFileExtension(e) {
     return path.extname(e).slice(1);
 }
 function getFileName(e) {
-    return path.basename(e);
+    const cleanPath = e.split('?')[0];
+    return path.basename(cleanPath);
 }
 function removeUndefinedKeys(e) {
     for (let t in e)

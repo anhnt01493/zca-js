@@ -496,7 +496,8 @@ export function getFileExtension(e: string) {
 }
 
 export function getFileName(e: string) {
-    return path.basename(e);
+    const cleanPath = e.split('?')[0];
+    return path.basename(cleanPath);
 }
 
 export function removeUndefinedKeys(e: Record<string, any>) {
