@@ -534,7 +534,6 @@ export async function handleZaloResponse(ctx, response, isEncrypted = true) {
     }
     try {
         const jsonData = await response.json();
-        console.log(jsonData);
         if (jsonData.error_code != 0) {
             result.error = {
                 message: jsonData.error_message,
@@ -543,7 +542,6 @@ export async function handleZaloResponse(ctx, response, isEncrypted = true) {
             return result;
         }
         const decodedData = isEncrypted ? JSON.parse(decodeAES(ctx.secretKey, jsonData.data)) : jsonData;
-        console.log(decodedData);
         if (decodedData.error_code != 0) {
             result.error = {
                 message: decodedData.error_message,

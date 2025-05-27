@@ -14,9 +14,7 @@ export const blockUserFactory = apiFactory()((api, ctx, utils) => {
             fid: userId,
             imei: ctx.imei,
         };
-        console.log(params);
         const encryptedParams = utils.encodeAES(JSON.stringify(params));
-        console.log(encryptedParams);
         if (!encryptedParams)
             throw new ZaloApiError("Failed to encrypt params");
         const response = await utils.request(serviceURL, {
