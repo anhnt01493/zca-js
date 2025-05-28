@@ -4,7 +4,7 @@ export class ZaloApiError extends Error {
     constructor(message: string, code?: number) {
         super(message);
 
-        this.name = "ZcaApiError";
+        this.name = message || "ZcaApiError";
         this.code = code || null;
     }
 }
