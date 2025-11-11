@@ -13,6 +13,7 @@ var utils = require('../utils.cjs');
 var ZaloApiError = require('../Errors/ZaloApiError.cjs');
 var SeenMessage = require('../models/SeenMessage.cjs');
 var DeliveredMessage = require('../models/DeliveredMessage.cjs');
+var VoiceEvent = require('../models/VoiceEvent.cjs');
 
 exports.CloseReason = void 0;
 (function (CloseReason) {
@@ -265,6 +266,10 @@ class Listener extends EventEmitter {
                             if (friendEvent.isSelf && !this.selfListen)
                                 continue;
                             this.emit("friend_event", friendEvent);
+                        }
+                        else if (control.content.act_type == "voip") {
+                            let voiceEvent = VoiceEvent.initVoiceEvent(control.content.act, JSON.parse(control.content.data));
+                            this.emit("voice_event", voiceEvent);
                         }
                     }
                 }

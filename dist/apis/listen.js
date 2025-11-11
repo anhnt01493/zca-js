@@ -7,6 +7,7 @@ import { decodeEventData, getFriendEventType, getGroupEventType, logger, makeURL
 import { ZaloApiError } from "../Errors/ZaloApiError.js";
 import { GroupSeenMessage, UserSeenMessage } from "../models/SeenMessage.js";
 import { UserDeliveredMessage, GroupDeliveredMessage } from "../models/DeliveredMessage.js";
+import { initVoiceEvent } from "../models/VoiceEvent.js";
 export var CloseReason;
 (function (CloseReason) {
     CloseReason[CloseReason["ManualClosure"] = 1000] = "ManualClosure";
@@ -258,6 +259,10 @@ export class Listener extends EventEmitter {
                             if (friendEvent.isSelf && !this.selfListen)
                                 continue;
                             this.emit("friend_event", friendEvent);
+                        }
+                        else if (control.content.act_type == "voip") {
+                            let voiceEvent = initVoiceEvent(control.content.act, JSON.parse(control.content.data));
+                            this.emit("voice_event", voiceEvent);
                         }
                     }
                 }

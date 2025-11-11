@@ -18,6 +18,7 @@ import { ZaloApiError } from "../Errors/ZaloApiError.js";
 import type { ContextSession } from "../context.js";
 import { type SeenMessage, GroupSeenMessage, UserSeenMessage } from "../models/SeenMessage.js";
 import { type DeliveredMessage, UserDeliveredMessage, GroupDeliveredMessage } from "../models/DeliveredMessage.js";
+import { initVoiceEvent, VoiceEvent } from "../models/VoiceEvent.js";
 
 type UploadEventData = {
     fileUrl: string;
@@ -55,6 +56,7 @@ interface ListenerEvents {
     friend_event: [data: FriendEvent];
     group_event: [data: GroupEvent];
     cipher_key: [key: string];
+    voice_event: [data: VoiceEvent];
 }
 
 export class Listener extends EventEmitter<ListenerEvents> {
@@ -357,6 +359,9 @@ export class Listener extends EventEmitter<ListenerEvents> {
                             );
                             if (friendEvent.isSelf && !this.selfListen) continue;
                             this.emit("friend_event", friendEvent);
+                        } else if (control.content.act_type == "voip") {
+                            let voiceEvent = initVoiceEvent(control.content.act, JSON.parse(control.content.data))
+                            this.emit("voice_event", voiceEvent);
                         }
                     }
                 }

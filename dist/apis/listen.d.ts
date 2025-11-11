@@ -5,6 +5,7 @@ import { Message, Reaction, Undo, ThreadType, Typing } from "../models/index.js"
 import type { ContextSession } from "../context.js";
 import { type SeenMessage } from "../models/SeenMessage.js";
 import { type DeliveredMessage } from "../models/DeliveredMessage.js";
+import { VoiceEvent } from "../models/VoiceEvent.js";
 type UploadEventData = {
     fileUrl: string;
     fileId: string;
@@ -37,6 +38,7 @@ interface ListenerEvents {
     friend_event: [data: FriendEvent];
     group_event: [data: GroupEvent];
     cipher_key: [key: string];
+    voice_event: [data: VoiceEvent];
 }
 export declare class Listener extends EventEmitter<ListenerEvents> {
     private ctx;
